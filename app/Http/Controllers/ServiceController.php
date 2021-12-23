@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 
+use App\Models\Response\HttpErrorResponse;
+use App\Models\Response\HttpSuccessResponse;
 use App\Repositories\Service\IServiceRepository;
-use App\Repositories\User\IUserRepository;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Http\Response;
 
 class ServiceController extends Controller
 {
@@ -24,14 +25,23 @@ class ServiceController extends Controller
     }
 
     /**
-     * @return \Illuminate\Http\JsonResponse|void
+     * @return Response
      */
-    public function getServices(){
+    public function getServices($request) : Response{
 
         if($services = $this->repository->getPublishedServices()){
-            return response()->json(["services" =>$services ], Response::HTTP_OK);
+            $services = $services->toArray();
+
+            $response = (new HttpSuccessResponse($request->tokenInfo->userId))
+                ->setSize(count($services))
+                ->setItems($services);
+
+            return new Response($response->toArray(),Response::HTTP_OK);
         }
 
-        return response()->json(['error' => "Services not found !"], Response::HTTP_NOT_FOUND);
+        $response = (new HttpErrorResponse())
+            ->setMessage(['error' => "Services not found !"]);
+
+        return new Response($response->toArray(),Response::HTTP_NOT_FOUND);
     }
 }

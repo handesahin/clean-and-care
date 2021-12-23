@@ -55,13 +55,13 @@ class CarController extends Controller
      */
     public function getCars(Request $request) : Response
     {
-        $limit = $request["limit"] ?? 25;
-        $offset = $request["offset"] ?? 0;
+        $request["limit"] = $request["limit"] ?? 25;
+        $request["offset"] = $request["offset"] ?? 0;
 
         if ($cars = Redis::get(self::REDIS_KEY)) {
 
             $carsArray = json_decode($cars, true);
-            $limitedData =array_slice($carsArray,$offset,$limit);
+            $limitedData =array_slice($carsArray,$request["offset"],$request["limit"]);
 
             $response = (new HttpSuccessResponse($request->tokenInfo->userId))
                         ->setSize(count($carsArray))
@@ -70,11 +70,13 @@ class CarController extends Controller
             return new Response($response->toArray(),Response::HTTP_OK);
         }
 
-        if($carsFromDb = $this->repository->getManyByAttributes(["limit"=>$limit, "offset"=>$offset])){
+        if($carsFromDb = $this->repository->getCars($request)){
+
+            $totalCount = $this->repository->getTotalCarCount();
 
             $response = (new HttpSuccessResponse($request->tokenInfo->userId))
-                ->setSize($limit)
-                ->setItems($carsFromDb);
+                ->setSize($totalCount)
+                ->setItems($carsFromDb->toArray());
 
             return new Response($response->toArray(),Response::HTTP_OK);
         }

@@ -26,53 +26,71 @@ class BalanceController extends Controller
         $this->repository = $repository;
     }
 
+    /**
+     * @param Request $request
+     * @return Response
+     */
+    public function createBalanceTransaction(Request $request): Response
+    {
 
-    public function createBalanceTransaction(Request $request){
-
-        if($this->repository->insertBalanceTransaction($request->tokenInfo->userId,$request->amount)){
+        if ($this->repository->insertBalanceTransaction($request->tokenInfo->userId, $request->amount)) {
             self::setCurrentBalanceToRedis($request->tokenInfo->userId);
 
             $response = (new HttpSuccessResponse($request->tokenInfo->userId));
 
-            return new Response($response->toArray(),Response::HTTP_CREATED);
+            return new Response($response->toArray(), Response::HTTP_CREATED);
         }
 
         $response = (new HttpErrorResponse())
-                    ->setMessage(['error' => "Balance not created !"]);
+            ->setMessage(['error' => "Balance not created !"]);
 
-        return new Response($response->toArray(),Response::HTTP_NOT_FOUND);
+        return new Response($response->toArray(), Response::HTTP_NOT_FOUND);
     }
 
-    public function getCurrentBalance(Request $request){
+    /**
+     * @param Request $request
+     * @return Response
+     */
+    public function getCurrentBalance(Request $request): Response
+    {
 
-        $balance = self::getCurrentBalanceAmount($request->tokenInfo->userId );
+        $balance = self::getCurrentBalanceAmount($request->tokenInfo->userId);
 
-        if(!is_null($balance)){
+        if (!is_null($balance)) {
             $response = (new HttpSuccessResponse($request->tokenInfo->userId));
-            return new Response($response->toArray(),Response::HTTP_OK);
+            return new Response($response->toArray(), Response::HTTP_OK);
         }
 
         $response = (new HttpErrorResponse())
             ->setMessage(['error' => "Balance not found!"]);
 
-        return new Response($response->toArray(),Response::HTTP_NOT_FOUND);
+        return new Response($response->toArray(), Response::HTTP_NOT_FOUND);
     }
 
-    private function setCurrentBalanceToRedis(int $userId ){
+    /**
+     * @param int $userId
+     */
+    private function setCurrentBalanceToRedis(int $userId)
+    {
         $amount = $this->repository->getTotalBalanceByUserId($userId);
 
-        if(!is_null($amount)){
-            Redis::set($userId.self::REDIS_KEY ,$amount);
+        if (!is_null($amount)) {
+            Redis::set($userId . self::REDIS_KEY, $amount);
         }
 
     }
 
-    public function getCurrentBalanceAmount($userId){
+    /**
+     * @param int $userId
+     * @return mixed
+     */
+    public function getCurrentBalanceAmount(int $userId)
+    {
 
-        if(!Redis::exists($userId.self::REDIS_KEY )){
+        if (!Redis::exists($userId . self::REDIS_KEY)) {
             self::setCurrentBalanceToRedis($userId);
         }
 
-        return Redis::get($userId.self::REDIS_KEY );
+        return Redis::get($userId . self::REDIS_KEY);
     }
 }

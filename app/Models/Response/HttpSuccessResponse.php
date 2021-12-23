@@ -8,18 +8,21 @@ use App\Http\Controllers\BalanceController;
 class HttpSuccessResponse
 {
 
-    public function __construct($userId)
+    public function __construct($userId = null)
     {
-        $this->balance = app(BalanceController::class)->getCurrentBalanceAmount($userId) ?? 0;
+        if($userId){
+            $this->userBalance = app(BalanceController::class)->getCurrentBalanceAmount($userId) ?? 0;
+        }
+
     }
 
-    protected int $size=0;
+    protected int $size = 0;
 
     protected int $status;
 
     protected string $message;
 
-    protected float $balance;
+    protected float $userBalance = 0;
 
     private array $items;
 

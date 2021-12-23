@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 
 use App\Helpers\JWTHelper;
+use App\Models\Response\HttpErrorResponse;
+use App\Models\Response\HttpSuccessResponse;
 use App\Repositories\User\IUserRepository;
 use App\Validators\AuthValidator;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpFoundation\Response ;
 
 class AuthController extends Controller
 {
@@ -36,17 +38,28 @@ class AuthController extends Controller
 
         $validation = AuthValidator::register($request);
         if (!$validation["isValid"]) {
-            return response()->json(['error'=> $validation["errorMessage"]], Response::HTTP_BAD_REQUEST);
+            $response = (new HttpErrorResponse())
+                ->setMessage($validation["errorMessage"]);
+
+            return new Response($response->toArray(),Response::HTTP_BAD_REQUEST);
         }
 
         data_set($request,"password",bcrypt($request->password));
 
         if($id = $this->repository->create($request)){
             $jwt = JWTHelper::createJwt($request->email,$request->password,$id);
-            return response()->json([ 'success' => true,"id"=>$id, 'token' => $jwt], Response::HTTP_CREATED);
+
+            $response = (new HttpSuccessResponse())
+                ->setSize(1)
+                ->setItems([ "userId"=>$id, 'token' => $jwt]);
+
+            return new Response($response->toArray(),Response::HTTP_CREATED);
         }
 
-        return response()->json(['error'=> "Register Failed!"], Response::HTTP_NOT_FOUND);
+        $response = (new HttpErrorResponse())
+            ->setMessage(["Register Failed!"]);
+
+        return new Response($response->toArray(),Response::HTTP_UNAUTHORIZED);
 
     }
 
@@ -58,7 +71,11 @@ class AuthController extends Controller
 
         $validation = AuthValidator::login($request);
         if (!$validation["isValid"]) {
-            return response()->json(['error'=> $validation["errorMessage"]], Response::HTTP_BAD_REQUEST);
+
+            $response = (new HttpErrorResponse())
+                ->setMessage($validation["errorMessage"]);
+
+            return new Response($response->toArray(),Response::HTTP_BAD_REQUEST);
         }
 
         $credentials = $request->only('email', 'password');
@@ -66,12 +83,19 @@ class AuthController extends Controller
         if(Auth::attempt($credentials)){
 
             $userId = $this->repository->getUserIdFromEmail($request->email);
-            $jwt = JWTHelper::createJwt($request->email,$request->password,$request->email);
+            $jwt = JWTHelper::createJwt($request->email,$request->password,$userId);
 
-            return response()->json([ 'success' => true,'token' => $jwt ], Response::HTTP_OK);
+            $response = (new HttpSuccessResponse())
+                ->setSize(1)
+                ->setItems([ 'token' => $jwt]);
+
+            return new Response($response->toArray(),Response::HTTP_OK);
         }
 
-        return  response()->json([], Response::HTTP_UNAUTHORIZED);
+        $response = (new HttpErrorResponse())
+            ->setMessage(["Login Failed!"]);
+
+        return new Response($response->toArray(),Response::HTTP_UNAUTHORIZED);
 
     }
 }
