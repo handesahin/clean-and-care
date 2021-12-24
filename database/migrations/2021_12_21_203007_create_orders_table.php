@@ -15,6 +15,14 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
+            $table->bigInteger('user_id')->index();
+            $table->string('order_number')->unique();
+            $table->bigInteger('car_id')->index();
+            $table->bigInteger('service_id')->index();
+            $table->double('price');
+            $table->string('note')->nullable();
+            $table->enum('payment_method',["Balance","Cash","CreditCard"]);
+            $table->enum('status',["Payment Pending","Paid","Canceled","In Progress","Completed"]);
             $table->timestamps();
         });
     }

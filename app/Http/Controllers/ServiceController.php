@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Models\Response\HttpErrorResponse;
 use App\Models\Response\HttpSuccessResponse;
 use App\Repositories\Service\IServiceRepository;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class ServiceController extends Controller
@@ -25,9 +26,10 @@ class ServiceController extends Controller
     }
 
     /**
+     * @param Request $request
      * @return Response
      */
-    public function getServices($request) : Response{
+    public function getServices( Request $request) : Response{
 
         if($services = $this->repository->getPublishedServices()){
             $services = $services->toArray();

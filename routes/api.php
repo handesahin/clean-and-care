@@ -25,8 +25,6 @@ Route::post('login', [AuthController::class, 'login']);
 
 Route::prefix("v1/orders")->middleware([Auth::class])->group(function(){
     Route::post('', [OrderController::class, 'createOrder']);
-    Route::post('search', [OrderController::class, 'getOrders']);
-    Route::get('{orderId}', [OrderController::class, 'getOrderById']);
 });
 
 Route::prefix("v1/services")->middleware([Auth::class])->group(function(){
@@ -41,4 +39,5 @@ Route::prefix("v1/cars")->middleware([Auth::class])->group(function(){
 Route::prefix("v1/account")->middleware([Auth::class])->group(function(){
     Route::get('balance', [BalanceController::class, 'getCurrentBalance']);
     Route::post('balance', [BalanceController::class, 'createBalanceTransaction']);
+    Route::get('orders', [OrderController::class, 'getOrders']);
 });

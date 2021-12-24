@@ -15,7 +15,7 @@ class CreateBalancesTable extends Migration
     {
         Schema::create('balance_transactions', function (Blueprint $table) {
             $table->id();
-            $table->integer("user_id")->unsigned();
+            $table->bigInteger("user_id")->index();
             $table->double("amount")->default(0);
             $table->timestamps();
         });
@@ -28,6 +28,6 @@ class CreateBalancesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('balances');
+        Schema::dropIfExists('balance_transactions');
     }
 }

@@ -2,85 +2,111 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\JWTHelper;
+use App\Helpers\OrderPaymentMethodConstant;
+use App\Helpers\OrderStatusConstant;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Models\Order;
+use App\Models\Response\HttpErrorResponse;
+use App\Models\Response\HttpSuccessResponse;
+use App\Repositories\Balance\BalanceRepository;
+use App\Repositories\Balance\IBalanceRepository;
+use App\Repositories\Order\IOrderRepository;
+use App\Repositories\Service\IServiceRepository;
+use App\Validators\AuthValidator;
+use App\Validators\OrderValidator;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class OrderController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
-    }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
+     * @var IOrderRepository
      */
-    public function create()
-    {
-        //
-    }
+    protected  IOrderRepository $repository;
 
     /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \App\Http\Requests\StoreOrderRequest  $request
-     * @return \Illuminate\Http\Response
+     * @var IBalanceRepository
      */
-    public function store(StoreOrderRequest $request)
-    {
-        //
-    }
+    protected  IBalanceRepository $balanceRepository;
 
     /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
+     * @param IOrderRepository $repository
+     * @param IBalanceRepository $balanceRepository
      */
-    public function show(Order $order)
+    public function __construct(IOrderRepository $repository, IBalanceRepository $balanceRepository)
     {
-        //
+        $this->repository = $repository;
+        $this->balanceRepository = $balanceRepository;
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Order $order)
-    {
-        //
+
+    public function createOrder(Request $request) : Response{
+        $validation = OrderValidator::createOrder($request);
+
+        if (!$validation["isValid"]) {
+            $response = (new HttpErrorResponse())
+                ->setMessage([$validation["errorMessage"]]);
+
+            return new Response($response->toArray(),Response::HTTP_BAD_REQUEST);
+        }
+
+        data_set($request,"user_id",$request->tokenInfo->userId);
+        data_set($request,"order_number",uniqid());
+        $payWithBalance = self::payWithBalance($request);
+
+
+        if($id = $this->repository->create($request)){
+            data_set($request,"id",$id);
+
+            $response = (new HttpSuccessResponse())
+                ->setSize(1)
+                ->setItems($request->toArray());
+
+            return new Response($response->toArray(),Response::HTTP_CREATED);
+        }
+
+        $response = (new HttpErrorResponse())
+            ->setMessage([$id]);
+
+        return new Response($response->toArray(),Response::HTTP_NOT_FOUND);
+
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \App\Http\Requests\UpdateOrderRequest  $request
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
-     */
-    public function update(UpdateOrderRequest $request, Order $order)
-    {
-        //
+    public function getOrders(Request $request) : Response {
+
+
+        $response = (new HttpErrorResponse())
+            ->setMessage(["Create Order Failed!"]);
+
+        return new Response($response->toArray(),Response::HTTP_NOT_FOUND);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Order $order)
-    {
-        //
+
+    private function setOrderStatus(Request &$request, $isPaidWithBalance){
+
+        if($request->paymentMethod == OrderPaymentMethodConstant::CASH || !$isPaidWithBalance){
+            data_set($request,"status",OrderStatusConstant::PAYMENT_PENDING);
+        }
+        else{
+            data_set($request,"status",OrderStatusConstant::PAID);
+        }
+    }
+
+    private function payWithBalance($request){
+        if($request->paymentMethod == OrderPaymentMethodConstant::BALANCE ) {
+            $currentBalance = $this->balanceRepository->getTotalBalanceByUserId($request->tokenInfo->userId);
+
+            if($currentBalance >= $request->price){
+                $this->balanceRepository->insertBalanceTransaction($request->tokenInfo->userId,$request->price);
+                return true;
+            }
+
+            return false;
+        }
+        return true;
+
     }
 }

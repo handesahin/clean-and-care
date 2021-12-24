@@ -80,7 +80,9 @@ class BaseRepository implements IRepository
             return $createdItem->id;
 
         } catch (\Exception $exception) {
-            return false;
+            DB::rollback();
+           // return false;
+            return $exception->getMessage();
         }
     }
 

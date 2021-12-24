@@ -39,7 +39,7 @@ class AuthController extends Controller
         $validation = AuthValidator::register($request);
         if (!$validation["isValid"]) {
             $response = (new HttpErrorResponse())
-                ->setMessage($validation["errorMessage"]);
+                ->setMessage([$validation["errorMessage"]]);
 
             return new Response($response->toArray(),Response::HTTP_BAD_REQUEST);
         }
@@ -73,7 +73,7 @@ class AuthController extends Controller
         if (!$validation["isValid"]) {
 
             $response = (new HttpErrorResponse())
-                ->setMessage($validation["errorMessage"]);
+                ->setMessage([$validation["errorMessage"]]);
 
             return new Response($response->toArray(),Response::HTTP_BAD_REQUEST);
         }
