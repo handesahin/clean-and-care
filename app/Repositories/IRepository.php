@@ -20,7 +20,7 @@ interface IRepository
      * @param array $data
      * @return mixed
      */
-    public function bulkCreate(array $data);
+    public function upsert(array $data, $key);
 
     /**
      * @param $id

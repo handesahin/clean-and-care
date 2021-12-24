@@ -33,19 +33,19 @@ class ServiceSeeder extends Seeder
                 'name' => 'Akü Bakımı',
                 'type' => self::CARE,
                 'price' => 1200.0,
-                'published' => 0
+                'published' => 1
             ],
             [
                 'name' => 'Dış Yıkama',
                 'type' => self::CLEAN,
                 'price' => 100.0,
-                'published' => 0
+                'published' => 1
             ],
             [
                 'name' => 'İç-Dış Yıkama',
                 'type' => self::CLEAN,
                 'price' => 200.0,
-                'published' => 0
+                'published' => 1
             ],
             [
                 'name' => 'Dezenfeksiyon',
@@ -57,7 +57,7 @@ class ServiceSeeder extends Seeder
                 'name' => 'Detaylı İç Yıkama',
                 'type' => self::CLEAN,
                 'price' => 250.0,
-                'published' => 0
+                'published' => 1
             ],
 
         ];

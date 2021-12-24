@@ -82,8 +82,8 @@ class AuthController extends Controller
 
         if(Auth::attempt($credentials)){
 
-            $userId = $this->repository->getUserIdFromEmail($request->email);
-            $jwt = JWTHelper::createJwt($request->email,$request->password,$userId);
+            $user = Auth::user();
+            $jwt = JWTHelper::createJwt($request->email,$request->password, $user->id);
 
             $response = (new HttpSuccessResponse())
                 ->setSize(1)

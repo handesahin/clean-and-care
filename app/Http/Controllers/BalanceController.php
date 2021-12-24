@@ -34,7 +34,7 @@ class BalanceController extends Controller
     {
 
         if ($this->repository->insertBalanceTransaction($request->tokenInfo->userId, $request->amount)) {
-            self::setCurrentBalanceToRedis($request->tokenInfo->userId);
+
 
             $response = (new HttpSuccessResponse($request->tokenInfo->userId));
 
@@ -90,6 +90,6 @@ class BalanceController extends Controller
             self::setCurrentBalanceToRedis($userId);
         }
 
-        return Redis::get($userId . RedisKeys::BALANCE_KEY);
+        return Redis::get($userId . RedisKeys::BALANCE_KEY) ;
     }
 }

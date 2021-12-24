@@ -34,19 +34,6 @@ class BaseRepository implements IRepository
         }
     }
 
-    /**
-     * @param array $dataArray
-     * @return mixed
-     */
-    public function bulkCreate(array $dataArray)
-    {
-        try {
-            return $this->model->createMany($dataArray);
-        } catch (\Exception $exception) {
-            return $exception->getMessage();
-        }
-    }
-
 
     /**
      * @param array $dataArray
@@ -55,8 +42,12 @@ class BaseRepository implements IRepository
      */
     public function upsert(array $dataArray, $key)
     {
+        DB::beginTransaction();
+
         try {
-            return $this->model->upsert($dataArray,$key);
+            $this->model->upsert($dataArray,$key);
+            DB::commit();
+            return true;
         } catch (\Exception $exception) {
             return $exception->getMessage();
         }
