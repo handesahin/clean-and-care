@@ -37,7 +37,7 @@ Clean&Care is an API for a  car clean&care company mobile app.
 ```
 
 ### Login  
-#### POST    v1/register
+#### POST    v1/login
 ```
  { 
     "email": "name@gmail.com",
