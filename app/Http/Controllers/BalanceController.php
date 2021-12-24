@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\RedisKeys;
 use App\Models\Response\HttpErrorResponse;
 use App\Models\Response\HttpSuccessResponse;
 use App\Repositories\Balance\IBalanceRepository;
@@ -11,7 +12,6 @@ use Illuminate\Support\Facades\Redis;
 
 class BalanceController extends Controller
 {
-    const REDIS_KEY = "_balance";
     /**
      * @var IBalanceRepository
      */
@@ -75,7 +75,7 @@ class BalanceController extends Controller
         $amount = $this->repository->getTotalBalanceByUserId($userId);
 
         if (!is_null($amount)) {
-            Redis::set($userId . self::REDIS_KEY, $amount);
+            Redis::set($userId . RedisKeys::BALANCE_KEY, $amount);
         }
 
     }
@@ -86,11 +86,10 @@ class BalanceController extends Controller
      */
     public function getCurrentBalanceAmount(int $userId)
     {
-
-        if (!Redis::exists($userId . self::REDIS_KEY)) {
+        if (!Redis::exists($userId . RedisKeys::BALANCE_KEY)) {
             self::setCurrentBalanceToRedis($userId);
         }
 
-        return Redis::get($userId . self::REDIS_KEY);
+        return Redis::get($userId . RedisKeys::BALANCE_KEY);
     }
 }

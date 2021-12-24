@@ -55,13 +55,15 @@ class OrderController extends Controller
 
         data_set($request,"user_id",$request->tokenInfo->userId);
         data_set($request,"order_number",uniqid());
-        $payWithBalance = self::payWithBalance($request);
 
+        $paidWithBalance = self::payWithBalance($request);
+
+        self::setOrderStatus($request,$paidWithBalance);
 
         if($id = $this->repository->create($request)){
             data_set($request,"id",$id);
 
-            $response = (new HttpSuccessResponse())
+            $response = (new HttpSuccessResponse($request->tokenInfo->userId))
                 ->setSize(1)
                 ->setItems($request->toArray());
 
@@ -77,17 +79,31 @@ class OrderController extends Controller
 
     public function getOrders(Request $request) : Response {
 
+        if($orders = ($this->repository->getUserOrders($request->tokenInfo->userId)->toArray())){
+
+            $response = (new HttpSuccessResponse($request->tokenInfo->userId))
+                ->setSize(count($orders))
+                ->setItems($orders);
+
+            return new Response($response->toArray(),Response::HTTP_OK);
+        }
 
         $response = (new HttpErrorResponse())
-            ->setMessage(["Create Order Failed!"]);
+            ->setMessage([" Order Not Found!"]);
 
         return new Response($response->toArray(),Response::HTTP_NOT_FOUND);
     }
 
 
-    private function setOrderStatus(Request &$request, $isPaidWithBalance){
+    /**
+     * @param Request $request
+     * @param $isPaidWithBalance
+     */
+    private function setOrderStatus(Request &$request, $paidWithBalance){
 
-        if($request->paymentMethod == OrderPaymentMethodConstant::CASH || !$isPaidWithBalance){
+        if($request->payment_method == OrderPaymentMethodConstant::CASH
+            || ($request->payment_method == OrderPaymentMethodConstant::BALANCE && !$paidWithBalance)){
+
             data_set($request,"status",OrderStatusConstant::PAYMENT_PENDING);
         }
         else{
@@ -95,18 +111,25 @@ class OrderController extends Controller
         }
     }
 
-    private function payWithBalance($request){
-        if($request->paymentMethod == OrderPaymentMethodConstant::BALANCE ) {
+    /**
+     * @param $request
+     * @return bool|null
+     */
+    private function payWithBalance($request): ?bool
+    {
+        if($request->payment_method == OrderPaymentMethodConstant::BALANCE ) {
             $currentBalance = $this->balanceRepository->getTotalBalanceByUserId($request->tokenInfo->userId);
 
             if($currentBalance >= $request->price){
-                $this->balanceRepository->insertBalanceTransaction($request->tokenInfo->userId,$request->price);
+
+                $this->balanceRepository->insertBalanceTransaction($request->tokenInfo->userId,($request->price*-1));
+
                 return true;
             }
 
             return false;
         }
-        return true;
+        return null;
 
     }
 }

@@ -7,4 +7,5 @@ use App\Repositories\IRepository;
 interface IOrderRepository extends IRepository
 {
 
+    public function getUserOrders($userId);
 }

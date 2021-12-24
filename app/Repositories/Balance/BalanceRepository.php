@@ -2,11 +2,15 @@
 
 namespace App\Repositories\Balance;
 
+
+use App\Helpers\RedisKeys;
 use App\Repositories\BaseRepository;
 use Illuminate\Support\Facades\Redis;
 
 class BalanceRepository extends BaseRepository implements IBalanceRepository
 {
+    const REDIS_KEY = "_balance";
+
     /**
      * @param int $userId
      * @param float $amount
@@ -15,6 +19,8 @@ class BalanceRepository extends BaseRepository implements IBalanceRepository
     public function insertBalanceTransaction(int $userId, float $amount) : bool {
 
         if(self::create(["user_id" => $userId, "amount" => $amount])){
+            $currentBalance = self::getTotalBalanceByUserId($userId);
+            Redis::set($userId . RedisKeys::BALANCE_KEY, $currentBalance);
 
             return true;
         };

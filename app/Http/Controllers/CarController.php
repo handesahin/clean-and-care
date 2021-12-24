@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\RedisKeys;
 use App\Models\Response\HttpErrorResponse;
 use App\Models\Response\HttpSuccessResponse;
 use App\Repositories\Car\ICarRepository;
@@ -13,8 +14,6 @@ use Illuminate\Support\Facades\Redis;
 class CarController extends Controller
 {
 
-
-    const REDIS_KEY = "cars";
     /**
      * @var ICarRepository
      */
@@ -45,7 +44,7 @@ class CarController extends Controller
                 $this->repository->upsert($data, 'id');
 
             }
-            Redis::set(self::REDIS_KEY, json_encode($responseBody["RECORDS"]));
+            Redis::set(RedisKeys::CAR_KEY, json_encode($responseBody["RECORDS"]));
         }
     }
 
@@ -58,7 +57,7 @@ class CarController extends Controller
         $request["limit"] = $request["limit"] ?? 25;
         $request["offset"] = $request["offset"] ?? 0;
 
-        if ($cars = Redis::get(self::REDIS_KEY)) {
+        if ($cars = Redis::get(RedisKeys::CAR_KEY)) {
 
             $carsArray = json_decode($cars, true);
             $limitedData =array_slice($carsArray,$request["offset"],$request["limit"]);
